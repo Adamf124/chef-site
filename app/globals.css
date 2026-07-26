@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   The food is the only color on the page. Everything else stays quiet: a
+   near-black room, warm paper text, one gold hairline. Photos glow against it.
+--------------------------------------------------------------------------- */
+@theme {
+  --color-ink: #0e0d0c;
+  --color-ink-raised: #17150f;
+  --color-paper: #ede7dd;
+  --color-paper-dim: #97907f;
+  --color-gold: #c9a24b;
+  --color-hairline: rgba(237, 231, 221, 0.14);
+
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-sans: var(--font-hanken), system-ui, sans-serif;
+}
+
+html {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: var(--font-sans);
+  margin: 0;
+  min-height: 100dvh;
+}
+
+::selection {
+  background: var(--color-gold);
+  color: var(--color-ink);
+}
+
+/* Visible focus everywhere. */
+:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Display face, used with restraint: his name, dish titles. */
+.display {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  letter-spacing: -0.01em;
+}
+
+.hairline {
+  border-color: var(--color-hairline);
+}
