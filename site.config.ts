@@ -1,7 +1,7 @@
 // Fill this in once. Everything user-facing reads from here.
 
 export const site = {
-  chefName: "[Chef Amos Ferguson]",
+  chefName: "Chef Amos Ferguson",
   // One line, kept deliberately open. Names a few directions without
   // committing to any of them.
   tagline: "Chef. Available for private dinners, events, and catering.",

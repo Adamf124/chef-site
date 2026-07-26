@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Media } from "@/lib/types";
 import { UploadForm } from "./upload-form";
+import { MediaControls } from "./media-controls";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +52,11 @@ export default async function Studio() {
                 hidden
               </span>
             )}
+            <MediaControls
+              id={m.id}
+              published={m.published}
+              title={m.title}
+            />
           </li>
         ))}
       </ul>
