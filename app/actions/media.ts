@@ -55,6 +55,41 @@ export async function deleteMedia(id: string): Promise<MediaResult> {
   return { ok: true };
 }
 
+export async function reorderMedia(orderedIds: string[]): Promise<MediaResult> {
+  const supabase = await createClient();
+
+  const { data: current, error: readErr } = await supabase
+    .from("media")
+    .select("id, sort_order")
+    .in("id", orderedIds);
+
+  if (readErr || !current) {
+    return { ok: false, error: "Couldn't read the current order." };
+  }
+
+  // Only write rows that actually moved. A drag shifts a contiguous run, so
+  // this is usually a handful of updates rather than the whole gallery.
+  const currentOrder = new Map(current.map((r) => [r.id, r.sort_order]));
+  const moved = orderedIds
+    .map((id, position) => ({ id, position }))
+    .filter(({ id, position }) => currentOrder.get(id) !== position);
+
+  if (moved.length === 0) return { ok: true };
+
+  const results = await Promise.all(
+    moved.map(({ id, position }) =>
+      supabase.from("media").update({ sort_order: position }).eq("id", id),
+    ),
+  );
+
+  if (results.some((r) => r.error)) {
+    return { ok: false, error: "The new order didn't save. Try again." };
+  }
+
+  refresh();
+  return { ok: true };
+}
+
 function refresh() {
   revalidatePath("/studio");
   revalidatePath("/"); // the public gallery is ISR'd, so nudge it too

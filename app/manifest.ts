@@ -3,7 +3,7 @@ import { site } from "@/site.config";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: `${site.chefName} — Chef`,
+    name: `${site.chefName} — Chef Extraordinaire`,
     short_name: site.chefName,
     description: site.tagline,
     start_url: "/studio",
