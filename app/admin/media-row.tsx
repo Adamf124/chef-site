@@ -6,6 +6,8 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Media } from "@/lib/types";
 import { NOTE_MAX, TITLE_MAX } from "@/lib/media";
+import { adminDateTime } from "@/lib/format";
+import { chip, chipOff, chipOn } from "@/lib/ui";
 import {
   deleteMedia,
   setFeatured,
@@ -13,21 +15,8 @@ import {
   updateMediaDetails,
 } from "@/app/actions/media";
 
-// Explicit locale and timezone: a bare toLocaleString() formats with the
-// server's locale during SSR and the browser's on hydration, which React
-// reports as a mismatch. He's in Ohio.
-const when = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "medium",
-  timeStyle: "short",
-  timeZone: "America/New_York",
-});
-
 const field =
   "w-full border-b hairline bg-transparent py-1.5 text-sm text-[var(--color-paper)] placeholder:text-[var(--color-paper-dim)] focus:border-[var(--color-gold)]";
-const chip =
-  "px-2 py-1 text-xs transition disabled:opacity-50 border hairline";
-const chipOn = "text-[var(--color-ink)] bg-[var(--color-paper)]";
-const chipOff = "text-[var(--color-paper-dim)] hover:text-[var(--color-gold)]";
 
 export function MediaRow({ m, bucketUrl }: { m: Media; bucketUrl: string }) {
   const router = useRouter();
@@ -180,7 +169,7 @@ export function MediaRow({ m, bucketUrl }: { m: Media; bucketUrl: string }) {
         />
 
         <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[var(--color-paper-dim)]">
-          <span>{when.format(new Date(m.created_at))}</span>
+          <span>{adminDateTime.format(new Date(m.created_at))}</span>
           {dirty && (
             <>
               <button

@@ -10,7 +10,10 @@ export default async function Inquiries() {
 
   // Unhandled first, newest first within that — marking one handled drops it
   // down the page, which is the behaviour an inbox should have.
-  const { data } = await supabase
+  // Keep `error`. Dropping it means a failed read renders as "nobody has
+  // written" — the same fail-silence that made an empty gallery and a broken
+  // query indistinguishable on the home page.
+  const { data, error } = await supabase
     .from("inquiries")
     .select("*")
     .order("handled", { ascending: true })
@@ -31,14 +34,24 @@ export default async function Inquiries() {
         </Link>
       </div>
 
-      <p className="mt-2 text-sm text-[var(--color-paper-dim)]">
-        {inquiries.length === 0
-          ? "Nobody has written yet."
-          : `${inquiries.length} total · ${open} to answer`}
-      </p>
+      {/* Counts only when there are some. The zero case is the list's own empty
+          state, which also points at where inquiries come from — saying it in
+          both places just repeated the same sentence twice. */}
+      {inquiries.length > 0 && (
+        <p className="mt-2 text-sm text-[var(--color-paper-dim)]">
+          {inquiries.length} total · {open} to answer
+        </p>
+      )}
 
       <div className="mt-8">
-        <InquiryList inquiries={inquiries} />
+        {error ? (
+          <p className="text-[var(--color-gold)]">
+            Couldn&apos;t load inquiries. Reload the page — this is a read
+            failure, not an empty inbox.
+          </p>
+        ) : (
+          <InquiryList inquiries={inquiries} />
+        )}
       </div>
     </main>
   );

@@ -5,15 +5,9 @@ import { useRouter } from "next/navigation";
 import type { Inquiry } from "@/lib/types";
 import { site, interestOptions } from "@/site.config";
 import { mailtoHref } from "@/lib/email";
+import { adminDateTime } from "@/lib/format";
+import { chip, chipOff, chipOn } from "@/lib/ui";
 import { deleteInquiry, setInquiryHandled } from "@/app/actions/inquiries";
-
-// Explicit locale and timezone, or SSR formats with the server's and hydration
-// formats with the browser's and React calls it a mismatch.
-const when = new Intl.DateTimeFormat("en-US", {
-  dateStyle: "medium",
-  timeStyle: "short",
-  timeZone: "America/New_York",
-});
 
 // Fall back to the stored value: interestOptions can change in site.config.ts
 // and old rows keep whatever string they were submitted with.
@@ -79,9 +73,11 @@ function InquiryRow({ inquiry }: { inquiry: Inquiry }) {
   }
 
   return (
-    <li
-      className={`border-b hairline py-5 ${inquiry.handled ? "opacity-55" : ""}`}
-    >
+    <li className="border-b hairline py-5">
+      {/* The dim marks a row answered, but it only wraps the message. Dimming
+          the whole row put the meta text and the Delete button at 2.6:1 against
+          the page — under AA, and under the 3:1 floor for controls. Paper at
+          55% is 5.3:1, so the message survives it. */}
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <span className="display text-lg">{inquiry.name}</span>
         {mailto ? (
@@ -100,7 +96,7 @@ function InquiryRow({ inquiry }: { inquiry: Inquiry }) {
           </span>
         )}
         <span className="ml-auto text-xs text-[var(--color-paper-dim)]">
-          {when.format(new Date(inquiry.created_at))}
+          {adminDateTime.format(new Date(inquiry.created_at))}
         </span>
       </div>
 
@@ -111,7 +107,11 @@ function InquiryRow({ inquiry }: { inquiry: Inquiry }) {
       {inquiry.message && (
         // Their line breaks are worth keeping; the text is untrusted, so it
         // goes in as text and never as markup.
-        <p className="mt-2 whitespace-pre-wrap text-[var(--color-paper)]">
+        <p
+          className={`mt-2 whitespace-pre-wrap text-[var(--color-paper)] ${
+            inquiry.handled ? "opacity-55" : ""
+          }`}
+        >
           {inquiry.message}
         </p>
       )}
@@ -124,11 +124,7 @@ function InquiryRow({ inquiry }: { inquiry: Inquiry }) {
           aria-label={`Mark ${inquiry.name}'s inquiry as ${
             inquiry.handled ? "still open" : "answered"
           }`}
-          className={`border hairline px-2 py-1 transition disabled:opacity-50 ${
-            inquiry.handled
-              ? "bg-[var(--color-paper)] text-[var(--color-ink)]"
-              : "text-[var(--color-paper-dim)] hover:text-[var(--color-gold)]"
-          }`}
+          className={`${chip} ${inquiry.handled ? chipOn : chipOff}`}
         >
           {busy ? "…" : inquiry.handled ? "Answered" : "Mark answered"}
         </button>
