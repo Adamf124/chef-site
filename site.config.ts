@@ -2,6 +2,9 @@
 
 export const site = {
   chefName: "Chef Amos Ferguson",
+  // Canonical, with the www — the apex 308s here. Used for metadataBase and
+  // the social card, so it has to be the address people actually land on.
+  url: "https://www.chefamosferguson.com",
   // One line, kept deliberately open. Names a few directions without
   // committing to any of them.
   tagline: "Chef. Available for private dinners, events, and catering.",

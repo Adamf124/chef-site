@@ -16,8 +16,25 @@ const hanken = Hanken_Grotesk({
 });
 
 export const metadata: Metadata = {
+  // Without metadataBase, relative image URLs in the card resolve against
+  // localhost and the preview silently breaks once shared.
+  metadataBase: new URL(site.url),
   title: `${site.chefName} — Chef`,
   description: site.tagline,
+  openGraph: {
+    type: "website",
+    siteName: site.chefName,
+    title: `${site.chefName} — Chef`,
+    description: site.tagline,
+    url: site.url,
+  },
+  twitter: {
+    // The whole point of the site is the photographs, so the card shows one
+    // large rather than a thumbnail. app/page.tsx supplies the image.
+    card: "summary_large_image",
+    title: `${site.chefName} — Chef`,
+    description: site.tagline,
+  },
 };
 
 export default function RootLayout({
