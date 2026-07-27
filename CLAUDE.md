@@ -38,10 +38,11 @@ Next.js App Router, Supabase (Postgres + Storage + Auth), TypeScript, Tailwind v
   would have made dragging anything above a featured piece silently no-op.
   The `-- pin to the top` comment and `media_display_idx` in the migration are
   stale about this; don't edit that file, it records what was actually run.
-- Data: `media` and `inquiries` tables, `supabase/migrations/0001_init.sql`.
-  `inquiries` has never been readable by any UI — every enquiry submitted so
-  far is invisible. Its select/update RLS already exists; a reader needs no
-  migration. Biggest remaining gap.
+- `/admin/inquiries` the inbox. Unhandled first, mark answered, reply by mail,
+  delete. Delete needed a new policy — `0002_owner_deletes_inquiries.sql`,
+  applied via the Supabase MCP; nothing in this repo runs migrations, the file
+  is only the record.
+- Data: `media` and `inquiries` tables, `supabase/migrations/`.
   RLS: public reads published media + submits inquiries; only owner writes
   media / reads inquiries. Admins checked against admin_emails() via is_owner().
 - Storage: public `media` bucket, owner-only writes.
@@ -52,6 +53,11 @@ hairline. Fraunces for display (name, dish titles), Hanken Grotesk for UI.
 Keep it quiet so the photos carry the page. Don't add a second accent color.
 
 ## Conventions
+- An inquiry's email goes into a `mailto:` href, so it passes `isEmailSafe`
+  (`lib/email.ts`) on the way in *and* the link is withheld at render if the
+  stored value isn't safe. The original check excluded only `@` and whitespace,
+  which let `a?subject=x&bcc=…@evil.com` through and made the reply link
+  injectable. Tightening validation can't clean rows already in the table.
 - Uploads compress images in the browser (`browser-image-compression`) before
   hitting Storage. Keep upload to one tap.
 - Copy is plain and active: buttons say what happens ("Send", "Add a photo").
