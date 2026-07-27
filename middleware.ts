@@ -32,12 +32,31 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect the studio. Everything else is public.
-  if (request.nextUrl.pathname.startsWith("/studio") && !user) {
+  // Any redirect has to carry the cookies `setAll` just wrote. Returning a bare
+  // NextResponse.redirect drops them, so a refresh token Supabase rotated during
+  // this request is lost and the browser goes on replaying a stale one.
+  const redirectTo = (pathname: string) => {
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+    url.pathname = pathname;
+    const redirect = NextResponse.redirect(url);
+    response.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie));
+    return redirect;
+  };
+
+  const path = request.nextUrl.pathname;
+  const owner = process.env.OWNER_EMAIL?.trim().toLowerCase();
+  const email = user?.email?.trim().toLowerCase();
+
+  // /admin is the owner's alone. Fails closed: no OWNER_EMAIL set means nobody
+  // gets in. A signed-in non-owner goes to /studio, which is where he was
+  // headed anyway — showing a signed-in man a login form helps no one.
+  if (path.startsWith("/admin")) {
+    if (!user) return redirectTo("/login");
+    if (!owner || email !== owner) return redirectTo("/studio");
   }
+
+  // Protect the studio. Everything else is public.
+  if (path.startsWith("/studio") && !user) return redirectTo("/login");
 
   return response;
 }

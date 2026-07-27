@@ -12,7 +12,6 @@ export default async function Studio() {
   const { data } = await supabase
     .from("media")
     .select("*")
-    .order("featured", { ascending: false })
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });
 

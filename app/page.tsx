@@ -12,7 +12,9 @@ export default async function Home() {
     .from("media")
     .select("*")
     .eq("published", true)
-    .order("featured", { ascending: false })
+    // `sort_order` alone decides position, set by dragging in /admin or /studio.
+    // `featured` only makes a tile render 2x2 below; it no longer floats to the
+    // top, or dragging something above a featured piece would silently no-op.
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });
 

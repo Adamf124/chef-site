@@ -2,23 +2,79 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { NOTE_MAX, TITLE_MAX } from "@/lib/media";
 
 export type MediaResult = { ok: true } | { ok: false; error: string };
+
+type RowPatch = {
+  title?: string | null;
+  note?: string | null;
+  published?: boolean;
+  featured?: boolean;
+};
+
+// One place for every single-row write. The `.select("id")` is load-bearing:
+// PostgREST reports error: null when RLS filters an UPDATE down to zero rows,
+// so without checking the affected count a blocked write looks like a success
+// and the optimistic UI keeps that lie until a hard reload.
+async function writeRow(
+  id: string,
+  patch: RowPatch,
+  failure: string,
+): Promise<MediaResult> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("media")
+    .update(patch)
+    .eq("id", id)
+    .select("id");
+
+  if (error || data?.length !== 1) return { ok: false, error: failure };
+
+  refresh();
+  return { ok: true };
+}
 
 export async function setPublished(
   id: string,
   published: boolean,
 ): Promise<MediaResult> {
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("media")
-    .update({ published })
-    .eq("id", id);
+  return writeRow(id, { published }, "Couldn't change that. Try again.");
+}
 
-  if (error) return { ok: false, error: "Couldn't change that. Try again." };
+export async function setFeatured(
+  id: string,
+  featured: boolean,
+): Promise<MediaResult> {
+  return writeRow(id, { featured }, "Couldn't change that. Try again.");
+}
 
-  refresh();
-  return { ok: true };
+export async function updateMediaDetails(
+  id: string,
+  patch: { title?: string | null; note?: string | null },
+): Promise<MediaResult> {
+  const next: RowPatch = {};
+
+  // A key that isn't in the patch is left alone; a blank one clears the column.
+  if ("title" in patch) {
+    const title = (patch.title ?? "").trim();
+    if (title.length > TITLE_MAX) {
+      return { ok: false, error: `Keep the title under ${TITLE_MAX} characters.` };
+    }
+    next.title = title || null;
+  }
+
+  if ("note" in patch) {
+    const note = (patch.note ?? "").trim();
+    if (note.length > NOTE_MAX) {
+      return { ok: false, error: `Keep the note under ${NOTE_MAX} characters.` };
+    }
+    next.note = note || null;
+  }
+
+  if (Object.keys(next).length === 0) return { ok: true };
+
+  return writeRow(id, next, "That didn't save. Try again.");
 }
 
 export async function deleteMedia(id: string): Promise<MediaResult> {
@@ -92,5 +148,6 @@ export async function reorderMedia(orderedIds: string[]): Promise<MediaResult> {
 
 function refresh() {
   revalidatePath("/studio");
+  revalidatePath("/admin"); // two UIs over one table; an edit in either shows in both
   revalidatePath("/"); // the public gallery is ISR'd, so nudge it too
 }

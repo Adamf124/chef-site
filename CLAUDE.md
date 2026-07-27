@@ -18,9 +18,14 @@ Next.js App Router, Supabase (Postgres + Storage + Auth), TypeScript, Tailwind v
   Reorder writes `sort_order` = position, and the studio queries in the same
   order as `/` so the grid is what visitors see. Drag is off the ⠿ grip only —
   making whole tiles draggable needs `touch-action: none` over most of the
-  screen, which kills scrolling on a phone. Caveat: `/` sorts `featured` first,
-  so if anything is ever featured it floats above the dragged order; nothing is
-  featured today and there's no UI to set it.
+  screen, which kills scrolling on a phone.
+- `/admin` Adam's denser surface: edit title and note, toggle live/big, delete,
+  reorder, with dates and counts. Gated to `OWNER_EMAIL` (server-only) in
+  `middleware.ts`, re-checked in the page. A signed-in non-owner goes to
+  `/studio`; an unset `OWNER_EMAIL` denies everyone. This is a UI guardrail,
+  not a wall — RLS still lets anyone in `admin_emails()` write.
+  Text edits deliberately skip `router.refresh()`: the action revalidates
+  anyway, and refreshing would wipe a draft being typed in another row.
 - `/login` email + 8-digit code (OTP). `ADMIN_EMAILS` (his + yours) gates who can sign in.
   Two Supabase Auth settings make this work, and neither lives in this repo:
   the Magic Link email template must contain `{{ .Token }}` (that, not omitting
@@ -28,7 +33,15 @@ Next.js App Router, Supabase (Postgres + Storage + Auth), TypeScript, Tailwind v
   length must be 8 (Auth → Providers → Email; default is 6, range 6–10).
   `CODE_LENGTH` in `app/login/page.tsx` is only the placeholder hint — the
   field accepts 6–10 on purpose, so a drifted setting can't lock him out.
+- Ordering: `sort_order` alone decides position everywhere. `featured` only
+  makes a tile render 2x2 on the public grid — it used to sort first, which
+  would have made dragging anything above a featured piece silently no-op.
+  The `-- pin to the top` comment and `media_display_idx` in the migration are
+  stale about this; don't edit that file, it records what was actually run.
 - Data: `media` and `inquiries` tables, `supabase/migrations/0001_init.sql`.
+  `inquiries` has never been readable by any UI — every enquiry submitted so
+  far is invisible. Its select/update RLS already exists; a reader needs no
+  migration. Biggest remaining gap.
   RLS: public reads published media + submits inquiries; only owner writes
   media / reads inquiries. Admins checked against admin_emails() via is_owner().
 - Storage: public `media` bucket, owner-only writes.
