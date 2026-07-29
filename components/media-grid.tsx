@@ -4,7 +4,26 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Media } from "@/lib/types";
 
 // Enough to show the work without pushing the contact form below a long scroll.
-const PREVIEW_COUNT = 8;
+const PREVIEW_MIN = 8;
+// The widest layout, and what a featured tile costs there: sm:col-span-2 plus
+// sm:row-span-2 is four cells, not one.
+const WIDEST_COLUMNS = 4;
+const FEATURED_CELLS = 4;
+
+/**
+ * How many pieces to show collapsed. A fixed count leaves a hole the moment a
+ * featured tile is in view — eight items with two featured is fourteen cells,
+ * and fourteen doesn't divide by four, so the last row comes up short. Take
+ * whole rows instead: keep adding until the cells land on a row boundary.
+ */
+function previewCount(media: Media[]) {
+  let cells = 0;
+  for (let i = 0; i < media.length; i++) {
+    cells += media[i].featured ? FEATURED_CELLS : 1;
+    if (i + 1 >= PREVIEW_MIN && cells % WIDEST_COLUMNS === 0) return i + 1;
+  }
+  return media.length;
+}
 // A swipe shorter than this is a tap that wandered, not a page turn.
 const SWIPE_THRESHOLD = 50;
 
@@ -23,10 +42,11 @@ export function MediaGrid({
   const isOpen = activeIndex !== null;
   const active = activeIndex === null ? null : media[activeIndex];
 
-  const collapsible = media.length > PREVIEW_COUNT;
+  const cut = previewCount(media);
+  const collapsible = media.length > cut;
   // Always a prefix of `media`, so a tile's index is its index in the full
   // list — which is what the lightbox navigates.
-  const visible = collapsible && !expanded ? media.slice(0, PREVIEW_COUNT) : media;
+  const visible = collapsible && !expanded ? media.slice(0, cut) : media;
 
   // Wrap around: at the last dish, next goes back to the first. The lightbox
   // walks the whole set, including anything still hidden behind "Show more".
@@ -137,7 +157,7 @@ export function MediaGrid({
             onClick={() => setExpanded(true)}
             className="border hairline px-8 py-3 text-sm text-[var(--color-paper)] transition hover:border-[var(--color-gold)] hover:text-[var(--color-gold)]"
           >
-            Show more ({media.length - PREVIEW_COUNT})
+            Show more ({media.length - cut})
           </button>
         </div>
       )}
